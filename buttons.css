@@ -165,9 +165,8 @@
     transition: transform 0.2s linear;
     transform: matrix(4.5281622e-8,0,0,6.1128423e-8,11.999999,11.999999)
 }
-.check-c {
-    transition: r 0.15s linear;
-}
+.check-c {}
+
 .switch-chart-displaying input + .switch-chart-displaying_btn .switch-chart-displaying_btn_ico:after {
     animation: circleSize 0.3s;
 }
@@ -176,7 +175,4 @@
 }
 .switch-chart-displaying input:checked + .switch-chart-displaying_btn .check-i {
     transform: matrix(0.54337946,0,0,0.56238149,4.2568465,4.0796998);
-}
-.switch-chart-displaying input:checked ~ .switch-chart-displaying_btn .check-c {
-    r: 0;
 }

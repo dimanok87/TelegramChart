@@ -99,9 +99,18 @@ function Chart(_element) {
         buttonsContainer.appendChild(button);
         var txt = button.querySelector('.switch-chart-displaying_btn_txt');
         var circleColor = button.querySelector('.check-c-color');
+        var animCircleColor = button.querySelector('.check-c');
+
+        animCircleColor.style.transition = 'r 0.15s linear';
+
+        var checkBox = button.querySelector('input');
+        var animButton = function() {
+            animCircleColor.setAttribute('r', !checkBox.checked ? '10.8' : '0');
+        };
+        polyFillAddEvent(checkBox, 'change', animButton);
+        animButton();
         txt.innerText = chartData.name;
         circleColor.setAttribute('fill', chartData.color);
-        var checkBox = button.querySelector('input');
         checkBox.onclick = function() {
             if (_chartState.animatedPreview) return false;
             toggleChartVisibility(chartData);
@@ -113,6 +122,9 @@ function Chart(_element) {
     // Элементы разметки
     var _animateControlCircle = svgElement('circle');
     _animateControlCircle.setAttribute('class', 'chart-control-animation');
+    _animateControlCircle.style.transition = 'r ' + _options.CSSduration + ', opacity ' + _options.CSSduration + '';
+    _animateControlCircle.setAttribute('cy', _options.previewHeight / 2);
+    _animateControlCircle.setAttribute('r', _options.previewHeight / 2);
 
     var
         // Для установки размеров холста
@@ -183,6 +195,7 @@ function Chart(_element) {
         };
 
     _pointCircle.setAttribute('class', 'chart-point-value-circle');
+    _pointCircle.setAttribute('r', '3.6');
 
     _chartControls.controlsButtons.move.setAttribute('id', 'move-sizer');
 
@@ -256,10 +269,14 @@ function Chart(_element) {
     oneLinePathEl.setAttribute('y2', '0');
 
     oneStepGroupEl.style.transition = 'opacity ' + _options.CSSduration + ' linear';
+    oneStepGroupEl.style.opacity = '0';
+
+
+    var dateGroupEl = svgElement('g');
+    dateGroupEl.style.transition = 'opacity 0.15s linear';
+    dateGroupEl.style.opacity = 0;
 
     var svgDateEl = svgElement('text');
-    svgDateEl.style.transition = 'opacity ' + _options.CSSduration + ' linear';
-    svgDateEl.style.opacity = 0;
     svgDateEl.setAttribute('text-anchor', 'middle');
 
     var svgRectDateEl = svgElement('rect');
@@ -325,18 +342,7 @@ function Chart(_element) {
 
 
         _chartControls.controlsCircles.left.setAttribute('cx', _options.previewOutside.left / 2);
-        _chartControls.controlsCircles.left.setAttribute('cy', _options.previewHeight / 2);
-        _chartControls.controlsCircles.left.setAttribute('r', _options.previewHeight / 2);
-        _chartControls.controlsCircles.left.style.transition = 'r ' + _options.CSSduration + ', opacity ' + _options.CSSduration + '';
-
-        _chartControls.controlsCircles.move.setAttribute('cy', _options.previewHeight / 2);
-        _chartControls.controlsCircles.move.setAttribute('r', _options.previewHeight / 2);
-        _chartControls.controlsCircles.move.style.transition = 'r ' + _options.CSSduration + ', opacity ' + _options.CSSduration + '';
-
         _chartControls.controlsCircles.right.setAttribute('cx', _options.previewOutside.left / 2);
-        _chartControls.controlsCircles.right.setAttribute('cy', _options.previewHeight / 2);
-        _chartControls.controlsCircles.right.setAttribute('r', _options.previewHeight / 2);
-        _chartControls.controlsCircles.right.style.transition = 'r ' + _options.CSSduration + ', opacity ' + _options.CSSduration + '';
 
         // График
         _allElementsGroup.appendChild(_chartGroup);
@@ -371,20 +377,22 @@ function Chart(_element) {
         _chartControls.rectangles.outside.setAttribute('width', previewSize);
         _chartControls.rectangles.inside.setAttribute('width', previewSize - _options.previewOutside.left * 2);
 
-        var stepXAxis = (_chartData.xAxis.data.length / _options.xAxisCount * _chartState.width) || 1;
-        _chartState.stepXAxis = Math.max(Math.pow(2, Math.ceil(Math.log(stepXAxis) / Math.log(2))), 1);
         _chartState.onePointWidth = _canvasViewSizes.width / (_chartState.endFloatPoint - _chartState.startFloatPoint - 1);
+
 
         _chartControls.controlsButtons.move.setAttribute('width', previewSize - _options.previewOutside.left * 2);
         _chartControls.controls.right.setAttribute('transform', 'translate(' + (previewSize - _options.previewOutside.left) + ', 0)');
         _chartControls.controlsCircles.move.setAttribute('cx', previewSize / 2  - _options.previewOutside.left);
+
+        var stepXAxis = (_chartData.xAxis.data.length / _options.xAxisCount * _chartState.width) || 1;
+        _chartState.stepXAxis = Math.max(Math.pow(2, Math.ceil(Math.log(stepXAxis) / Math.log(2))), 1);
+        _chartState.xAxisInterval = _chartState.onePointWidth * _chartState.stepXAxis;
     };
 
     var setLeftPosPreview = function() {
         var leftPosition = _chartState.start * _canvasViewSizes.width;
         _scaleControls.setAttribute('transform', 'translate(' + leftPosition + ', 0)');
         _chartControls.shadows.left.setAttribute('width', leftPosition || 1);
-
         _chartState.startFloatPoint = _chartState.start * _chartData.xAxis.data.length;
         _chartState.startPoint = Math.floor(_chartState.startFloatPoint);
         _invisibleControlsPreview.setAttribute('transform', 'translate(' + leftPosition + ', 0)');
@@ -712,8 +720,10 @@ function Chart(_element) {
 
         var activeArea;
         addEvent(_svgCanvas, 'mousemove', function(event) {
-            var clientX = event.offsetX - _options.padding.left;
-            var clientY = event.offsetY - _options.padding.top;
+            var offsetPositions = this.getBoundingClientRect();
+            var clientX = (event.clientX - offsetPositions['x']) - _options.padding.left;
+            var clientY = (event.clientY - offsetPositions['y']) - _options.padding.top;
+
             var xSuccessful = (clientX > 0) && (clientX < _canvasViewSizes.width);
             var ySuccessful = (clientY > 0) && (clientY < _options.baseChartHeight);
             if (xSuccessful && ySuccessful) {
@@ -829,8 +839,22 @@ function Chart(_element) {
     iniElementsSizes();
     applyColorTheme();
 
+
+    var setOpacityLine = function(element, opacity, timeout, fast) {
+        if (!fast) {
+            setTimeout(function() {
+                element.style.opacity = opacity;
+            }, !isNaN(timeout) ? timeout : 20);
+        } else {
+            var oldTransition = element.style.transition;
+            element.style.transition = undefined;
+            element.style.opacity = opacity;
+            element.style.transition = oldTransition;
+        }
+    };
+
     var createSVGDate = function(point, index) {
-        var dateGroup = svgElement('g');
+        var dateGroup = dateGroupEl.cloneNode(true);
         var svgRectDate = svgRectDateEl.cloneNode(false);
         var svgDate = svgDateEl.cloneNode(false);
         dateGroup.appendChild(svgRectDate);
@@ -842,90 +866,81 @@ function Chart(_element) {
             svgDate.setAttribute('transform', 'translate(' + (-_chartState.stepXAxis) + ', 0)');
             svgDate.setAttribute('text-anchor', 'end');
         }
-        setTimeout(function() {
-            svgDate.style.opacity = 1;
-        });
         _datesGroup.appendChild(dateGroup);
         return dateGroup;
     };
     var removeSVGDate = function(point) {
-        point.removed = true;
         point.svg.style.opacity = 0;
-        setTimeout(function() {
-            if (point.removed) {
-                _chartState.visibleXAxisPoints = _chartState.visibleXAxisPoints.filter(function(visiblePoint) {
-                    if (visiblePoint === point) {
-                        _datesGroup.removeChild(point.svg);
-                        return false;
-                    } else {
-                        return true;
-                    }
-                });
-            }
+        point.remover = setTimeout(function() {
+            _chartState.visibleXAxisPoints = _chartState.visibleXAxisPoints.filter(function(visiblePoint) {
+                if (visiblePoint === point) {
+                    _datesGroup.removeChild(point.svg);
+                    return false;
+                } else {
+                    return true;
+                }
+            });
         }, 500);
     };
     var redrawDates = function() {
-
         _chartState.xAxisVisible = _chartData.xAxis.data.slice(_chartState.startPoint, _chartState.endPoint);
-        var xAxisStartPosition = (_chartState.startFloatPoint - (_chartState.startFloatPoint % _chartState.stepXAxis));
+        _chartState.xAxisStartPosition = (_chartState.startFloatPoint - (_chartState.startFloatPoint % _chartState.stepXAxis));
+        _chartState.xAxisleftOffset = _chartState.startFloatPoint / _chartState.stepXAxis % 1;
 
-        var leftOffset = _chartState.startFloatPoint / _chartState.stepXAxis % 1;
-        var datesInterval = _chartState.onePointWidth * _chartState.stepXAxis;
+        var kWidth = _chartState.xAxisInterval / _options.xAxisItemSize;
+        var xAxisCount = _options.xAxisCount / kWidth + 1;
 
-        for (var k = 0; k <= (_options.xAxisCount + 1); k++) {
-            var datePointPosition = k * _chartState.stepXAxis + xAxisStartPosition;
+        var visibleDates = _chartState.visibleXAxisPoints.filter(function(dateModel) {
+            var k = (dateModel.index - _chartState.xAxisStartPosition) / _chartState.stepXAxis;
+            dateModel.svg.setAttribute('transform', 'translate(' + (k - _chartState.xAxisleftOffset) * _chartState.xAxisInterval + ', 0)');
+            if ((dateModel.index % _chartState.stepXAxis) || (k < 0) || (k > xAxisCount)) {
+                if (!dateModel.remover) {
+                    removeSVGDate(dateModel);
+                }
+                return false;
+            } else {
+                if (dateModel.remover) {
+                    clearTimeout(dateModel.remover);
+                    dateModel.svg.style.opacity = 1;
+                    dateModel.remover = false;
+                }
+                return true;
+            }
+        });
+
+        for (var k = 0; k <= xAxisCount; k++) {
+            var datePointPosition = k * _chartState.stepXAxis + _chartState.xAxisStartPosition;
             if (datePointPosition >= _chartData.xAxis.data.length) break;
             var visiblePoint = _chartData.xAxis.data[datePointPosition];
-
-            var existsDateLabel = _chartState.visibleXAxisPoints.filter(function(exPoint) {
+            var existsDateLabel = visibleDates.filter(function(exPoint) {
                 return exPoint.point === visiblePoint;
             })[0];
-
             if (!existsDateLabel) {
-                _chartState.visibleXAxisPoints.push({
+                existsDateLabel = {
                     point: visiblePoint,
                     svg: createSVGDate(visiblePoint, datePointPosition),
-                    index: datePointPosition,
-                    removed: false
-                });
-            } else {
-                existsDateLabel.removed = false;
-                existsDateLabel.svg.style.opacity = 1;
+                    index: datePointPosition
+                };
+                _chartState.visibleXAxisPoints.push(existsDateLabel);
+                existsDateLabel.svg.setAttribute('transform', 'translate(' + (k - _chartState.xAxisleftOffset) * _chartState.xAxisInterval + ', 0)');
+                setOpacityLine(existsDateLabel.svg, 1, 0, !((k > 0) && (k < (xAxisCount - 1))));
             }
         }
-
-        _chartState.visibleXAxisPoints.filter(function(visiblePoint) {
-            if (visiblePoint.removed !== null) {
-                visiblePoint.removed = visiblePoint.removed || null;
-                return false;
-            }
-            return true;
-        }).forEach(removeSVGDate);
-
-        _chartState.visibleXAxisPoints.forEach(function(visiblePoint) {
-             k = (visiblePoint.index - xAxisStartPosition) / _chartState.stepXAxis;
-            visiblePoint.svg.setAttribute('transform', 'translate(' + (k - leftOffset) * datesInterval + ', 0)');
-        });
     };
-
 
     var removeSVGGridLine = function(line) {
-        line.removed = true;
-        line.svg.style.opacity = 0;
-        setTimeout(function() {
-            if (line.removed) {
-                _chartState.gridLines = _chartState.gridLines.filter(function(visibleLine) {
-                    if (visibleLine === line) {
-                        _gridsGroup.removeChild(line.svg);
-                        return false;
-                    } else {
-                        return true;
-                    }
-                });
-            }
+        setOpacityLine(line.svg, 0);
+        line.remover = setTimeout(function() {
+            _chartState.gridLines = _chartState.gridLines.filter(function(visibleLine) {
+                if (visibleLine === line) {
+                    _gridsGroup.removeChild(line.svg);
+                    return false;
+                } else {
+                    return true;
+                }
+            });
         }, 500);
     };
-
     var createSVGGridLine = function(gridLineValue) {
         var oneStepGroup = oneStepGroupEl.cloneNode(false);
         var oneLineText = oneLineTextEl.cloneNode(false);
@@ -944,58 +959,60 @@ function Chart(_element) {
         _gridsGroup.appendChild(oneStepGroup);
         return oneStepGroup;
     };
-
     var redrawGridLines = function() {
+        var existsGridLines = _chartState.gridLines.filter(function(existsLine) {
+            existsLine.svg.setAttribute('transform', 'translate(0, ' + (-existsLine.value * _chartState.currentGridK) + ')');
+            if ((existsLine.value % _chartState.gridStep) || ((existsLine.value / _chartState.gridStep) % 1)) {
+                if (!existsLine.remover) {
+                    removeSVGGridLine(existsLine);
+                }
+                return false;
+            } else {
+                if (existsLine.remover) {
+                    setOpacityLine(existsLine.svg, 1);
+                    clearTimeout(existsLine.remover);
+                    existsLine.remover = false;
+                }
+                return true;
+            }
+        });
+
         for (var k = 0; k <= _options.gridCount; k++) {
             var gridLineValue = k * _chartState.gridStep;
-            var existsGridLine = _chartState.gridLines.filter(function(existsLine) {
+            var existsGridLine = existsGridLines.filter(function(existsLine) {
                 return gridLineValue === existsLine.value;
             })[0];
-            if (existsGridLine) {
-                existsGridLine.removed = false;
-                existsGridLine.svg.style.opacity = 1;
-            } else {
+
+            if (!existsGridLine) {
                 existsGridLine = {
                     svg: createSVGGridLine(gridLineValue),
-                    value: gridLineValue,
-                    removed: false
+                    value: gridLineValue
                 };
+                existsGridLine.svg.setAttribute('transform', 'translate(0, ' + (-gridLineValue * _chartState.currentGridK) + ')');
                 _chartState.gridLines.push(existsGridLine);
+                setOpacityLine(existsGridLine.svg, 1);
             }
             existsGridLine.index = k;
         }
 
-        _chartState.gridLines.filter(function(line) {
-            if (line.removed !== null) {
-                line.removed = line.removed || null;
-                return false;
-            }
-            return true;
-        }).forEach(removeSVGGridLine);
-
-        _chartState.gridLines.forEach(function(visibleLine) {
-            visibleLine.svg.setAttribute('transform', 'translate(0, ' + (-visibleLine.value * _chartState.currentGridK) + ')');
-        });
     };
 
+
     var drawBaseLines = function() {
-
-
+        var xPosition = (_chartState.selectedPointIndex - _chartState.startPoint) * _chartState.onePointWidth - _chartState.linesLeftOffset;
         _chartData.yAxis.forEach(function(chartItem) {
             var polyLinePoints = [];
-
             if (_chartState.selectedPointIndex) {
                 chartItem.circleChart.setAttribute('cy', -chartItem.data[_chartState.selectedPointIndex] * _chartState.currentGridK);
-                chartItem.circleChart.setAttribute('cx', (_chartState.selectedPointIndex - _chartState.startPoint) * _chartState.onePointWidth - _chartState.linesLeftOffset);
+                chartItem.circleChart.setAttribute('cx', xPosition);
             }
-
             chartItem.visibleData.forEach(function(point, index) {
                 var xVal = index * _chartState.onePointWidth - _chartState.linesLeftOffset;
                 polyLinePoints.push(
                     xVal + ',' + (-point * _chartState.currentGridK)
                 );
             });
-            chartItem.basePolyline.setAttribute('points', polyLinePoints.join(' '));
+            chartItem.basePolyline.setAttribute('d', 'M' + polyLinePoints.join(' L'));
         });
         redrawGridLines();
     };
@@ -1101,7 +1118,7 @@ function Chart(_element) {
                     polyLinePreviewChart.style.transition = 'stroke-opacity ' + _options.CSSduration;
 
 
-                    var polyLineBaseChart = svgElement('polyline');
+                    var polyLineBaseChart = svgElement('path');
                     polyLineBaseChart.setAttribute('class', 'chart-base-view-line');
                     polyLineBaseChart.setAttribute('fill-opacity', '0');
                     polyLineBaseChart.setAttribute('stroke', data.colors[columnName]);

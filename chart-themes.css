@@ -139,7 +139,6 @@ body {
 .chart-point-value-circle {
     stroke-width: 2;
     fill: #ffffff;
-    r: 3.6;
     transition: fill-opacity 0.1s linear, stroke-opacity 0.1s linear;
 }
 .theme-switcher_night-theme {

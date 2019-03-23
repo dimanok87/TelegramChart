@@ -1,5 +1,24 @@
 
+
+var getXmlHttp = function() {
+    var xmlhttp;
+    try {
+        xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+        try {
+            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        } catch (E) {
+            xmlhttp = false;
+        }
+    }
+    if (!xmlhttp && typeof XMLHttpRequest!='undefined') {
+        xmlhttp = new XMLHttpRequest();
+    }
+    return xmlhttp;
+};
+
 var initChart = function() {
+    var xhr = getXmlHttp();
 
     var body = document.getElementsByTagName('body')[0];
     var metaColorsTags = document.getElementsByClassName('browser-theme-color');
@@ -36,28 +55,42 @@ var initChart = function() {
 
     var charts = document.getElementById('charts-list');
 
-    chartsData.forEach(function(chartData, index) {
-        var chartDomContainer = document.createElement('div');
-        chartDomContainer.className = 'one-chart-block';
+    xhr.open('GET', 'data.json', true);
+    xhr.send();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState != 4) return;
+        if (xhr.status != 200) {
+            console.log(xhr.status + ': ' + xhr.statusText);
+        } else {
+            setDataToCharts(JSON.parse(xhr.responseText));
+        }
+    };
 
-        var chartDom = document.createElement('div');
-        chartDom.className = 'one-chart-container';
+    var setDataToCharts = function(chartsData) {
+        chartsData.forEach(function(chartData, index) {
+            var chartDomContainer = document.createElement('div');
+            chartDomContainer.className = 'one-chart-block';
 
-        var chartTitle = document.createElement('div');
-        chartTitle.className = 'one-chart-title';
+            var chartDom = document.createElement('div');
+            chartDom.className = 'one-chart-container';
 
-        chartTitle.innerText = 'Chart #' + (index + 1);
+            var chartTitle = document.createElement('div');
+            chartTitle.className = 'one-chart-title';
 
-        chartDomContainer.appendChild(chartTitle);
+            chartTitle.innerText = 'Chart #' + (index + 1);
+
+            chartDomContainer.appendChild(chartTitle);
 
 
-        chartDomContainer.appendChild(chartDom);
-        charts.appendChild(chartDomContainer);
-        var chart = new Chart(chartDom);
+            chartDomContainer.appendChild(chartDom);
+            charts.appendChild(chartDomContainer);
+            var chart = new Chart(chartDom);
 
-        chart.setData(chartData);
+            chart.setData(chartData);
 
-    });
+        });
+    };
+
 };
 
 window.onload = initChart;
