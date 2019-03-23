@@ -18,9 +18,14 @@
     min-height: 440px;
 }
 .chart-canvas-container {
+    margin: 0 -14px;
     overflow: hidden;
-    width: 100%;
+    width: auto;
     position: relative;
+}
+.chart-svg-canvas-container {
+    margin: 0 14px;
+    overflow: hidden;
 }
 @media screen and (max-width: 540px) {
     body {
@@ -124,6 +129,7 @@ body {
     line-height: initial;
     opacity: 0;
     transition: opacity 0.1s;
+    margin-left: 14px;
 }
 .chart-info-tooltip-date {
     font-size: 14px;

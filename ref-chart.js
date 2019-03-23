@@ -21,6 +21,13 @@ function Chart(_element) {
         return n.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
     };
 
+    var preventDefault = function(e) {
+        e = e || window.event;
+        if (e.preventDefault)
+            e.preventDefault();
+        e.returnValue = false;
+    };
+
     // Static functions
 
     var ASSOCIATIONS_EVENTS = {
@@ -59,7 +66,7 @@ function Chart(_element) {
                 break;
             case 'touchstart':
             case 'touchmove':
-                return event.touches[0].clientX;
+                return event.targetTouches[0].clientX;
                 break;
         }
     };
@@ -160,7 +167,8 @@ function Chart(_element) {
             },
             controls: {
                 left: svgElement('g'),
-                right: svgElement('g')
+                right: svgElement('g'),
+                move: svgElement('g')
             },
             controlsCircles: {
                 left: _animateControlCircle.cloneNode(false),
@@ -169,12 +177,14 @@ function Chart(_element) {
             },
             controlsButtons: {
                 left: svgElement('rect'),
-                right: svgElement('rect')
+                right: svgElement('rect'),
+                move: svgElement('rect')
             }
         };
 
     _pointCircle.setAttribute('class', 'chart-point-value-circle');
 
+    _chartControls.controlsButtons.move.setAttribute('id', 'move-sizer');
 
     var pointsInfoTooltip = document.createElement('div');
     pointsInfoTooltip.className = 'chart-info-tooltip';
@@ -257,11 +267,16 @@ function Chart(_element) {
     var generateChartLayouts = function () {
 
         // Весь холст
+        var CanvasContainer = document.createElement('div');
+        CanvasContainer.className = 'chart-canvas-container';
+
         var svgCanvasContainer = document.createElement('div');
-        svgCanvasContainer.className = 'chart-canvas-container';
-        svgCanvasContainer.appendChild(pointsInfoTooltip);
+        svgCanvasContainer.className = 'chart-svg-canvas-container';
+        CanvasContainer.appendChild(pointsInfoTooltip);
+        CanvasContainer.appendChild(svgCanvasContainer);
+
         svgCanvasContainer.appendChild(_svgCanvas);
-        _element.appendChild(svgCanvasContainer);
+        _element.appendChild(CanvasContainer);
 
         _element.appendChild(buttonsContainer);
 
@@ -297,14 +312,16 @@ function Chart(_element) {
 
         _previewGroup.appendChild(_invisibleControlsPreview);
 
+        _invisibleControlsPreview.appendChild(_chartControls.controls.move);
         _invisibleControlsPreview.appendChild(_chartControls.controls.left);
         _invisibleControlsPreview.appendChild(_chartControls.controls.right);
 
         _chartControls.controls.left.appendChild(_chartControls.controlsCircles.left);
         _chartControls.controls.left.appendChild(_chartControls.controlsButtons.left);
+        _chartControls.controls.move.appendChild(_chartControls.controlsCircles.move);
+        _chartControls.controls.move.appendChild(_chartControls.controlsButtons.move);
         _chartControls.controls.right.appendChild(_chartControls.controlsCircles.right);
         _chartControls.controls.right.appendChild(_chartControls.controlsButtons.right);
-        _previewGroup.appendChild(_chartControls.controlsCircles.move);
 
 
         _chartControls.controlsCircles.left.setAttribute('cx', _options.previewOutside.left / 2);
@@ -313,6 +330,7 @@ function Chart(_element) {
         _chartControls.controlsCircles.left.style.transition = 'r ' + _options.CSSduration + ', opacity ' + _options.CSSduration + '';
 
         _chartControls.controlsCircles.move.setAttribute('cy', _options.previewHeight / 2);
+        _chartControls.controlsCircles.move.setAttribute('r', _options.previewHeight / 2);
         _chartControls.controlsCircles.move.style.transition = 'r ' + _options.CSSduration + ', opacity ' + _options.CSSduration + '';
 
         _chartControls.controlsCircles.right.setAttribute('cx', _options.previewOutside.left / 2);
@@ -357,7 +375,9 @@ function Chart(_element) {
         _chartState.stepXAxis = Math.max(Math.pow(2, Math.ceil(Math.log(stepXAxis) / Math.log(2))), 1);
         _chartState.onePointWidth = _canvasViewSizes.width / (_chartState.endFloatPoint - _chartState.startFloatPoint - 1);
 
+        _chartControls.controlsButtons.move.setAttribute('width', previewSize - _options.previewOutside.left * 2);
         _chartControls.controls.right.setAttribute('transform', 'translate(' + (previewSize - _options.previewOutside.left) + ', 0)');
+        _chartControls.controlsCircles.move.setAttribute('cx', previewSize / 2  - _options.previewOutside.left);
     };
 
     var setLeftPosPreview = function() {
@@ -390,7 +410,6 @@ function Chart(_element) {
             visibleXAxisPoints: [],
             gridLines: []
         };
-
 
         var svgSizes = {
             width: _element.offsetWidth,
@@ -452,6 +471,8 @@ function Chart(_element) {
         _chartControls.controlsButtons.right.setAttribute('width', invisibleButtonSize);
         _chartControls.controlsButtons.right.setAttribute('height', _options.previewHeight);
 
+        _chartControls.controls.move.setAttribute('transform', 'translate(' + _options.previewOutside.left + ', 0)');
+        _chartControls.controlsButtons.move.setAttribute('height', _options.previewHeight);
 
         _chartGroup.setAttribute('transform', 'translate(0, ' + (previewOffset - _options.xAxisHeight) + ')');
         _gridsGroup.setAttribute('transform', 'translate(0, ' + (previewOffset - _options.xAxisHeight) + ')');
@@ -491,8 +512,8 @@ function Chart(_element) {
 
         var iniCommonDown = function(event) {
             event.stopPropagation();
+            preventDefault(event);
             _startMovePosition = getClientX(event);
-            _chartState.previewElementPosition = _previewGroup.getBoundingClientRect();
             _previewDownPositions = {
                 start: _chartState.start,
                 end: _chartState.end,
@@ -506,22 +527,20 @@ function Chart(_element) {
         var moverUp = function() {
             removeEvent(window, 'mousemove', moverMove);
             removeEvent(window, 'mouseup', moverUp);
+
             setTimeout(function() {
                 _chartControls.controlsCircles.move.setAttribute('r', 0);
                 _chartControls.controlsCircles.move.style.opacity = 0;
             });
         };
         var moverMove = function(event) {
-            event.type === 'mousemove' ? event.preventDefault() : false;
-            var currPosition = getClientX(event);
-            var rangePercentsMove = (currPosition - _startMovePosition) / _canvasViewSizes.width;
+            preventDefault(event);
+            var rangePercentsMove = (getClientX(event) - _startMovePosition) / _canvasViewSizes.width;
             rangePercentsMove = Math.max(Math.min(rangePercentsMove, _previewDownPositions.maxRight), _previewDownPositions.maxLeft);
 
             _chartState.start = _previewDownPositions.start + rangePercentsMove;
             _chartState.end = _previewDownPositions.end + rangePercentsMove;
             _chartState.width = _chartState.end - _chartState.start;
-
-            _chartControls.controlsCircles.move.setAttribute('cx', currPosition - _chartState.previewElementPosition['x']);
 
             setLeftPosPreview();
             setRightPosPreview();
@@ -529,11 +548,11 @@ function Chart(_element) {
             return false;
         };
         var moverDown = function(event) {
-            _chartControls.controlsCircles.move.setAttribute('r', 0);
             iniCommonDown(event);
             addEvent(window, 'mousemove', moverMove);
             addEvent(window, 'mouseup', moverUp);
-            _chartControls.controlsCircles.move.setAttribute('cx', _startMovePosition - _chartState.previewElementPosition['x']);
+
+            _chartControls.controlsCircles.move.setAttribute('r', 0);
             setTimeout(function() {
                 _chartControls.controlsCircles.move.setAttribute('r', _options.previewHeight * 0.75);
                 _chartControls.controlsCircles.move.style.opacity = 1;
@@ -551,7 +570,7 @@ function Chart(_element) {
             });
         };
         var leftMove = function(event) {
-            event.type === 'mousemove' ? event.preventDefault() : false;
+            preventDefault(event);
 
             var rangePercentsMove = (getClientX(event) - _startMovePosition) / _canvasViewSizes.width;
             rangePercentsMove = Math.max(Math.min(rangePercentsMove, _previewDownPositions.minSize), _previewDownPositions.maxLeft);
@@ -587,7 +606,7 @@ function Chart(_element) {
             });
         };
         var rightMove = function(event) {
-            event.type === 'mousemove' ? event.preventDefault() : false;
+            preventDefault(event);
             var rangePercentsMove = (getClientX(event) - _startMovePosition) / _canvasViewSizes.width;
             rangePercentsMove = Math.max(Math.min(rangePercentsMove, _previewDownPositions.maxRight), -_previewDownPositions.minSize);
 
@@ -612,9 +631,29 @@ function Chart(_element) {
             return false;
         };
 
-        addEvent(_previewGroup, 'mousedown', moverDown);
+        addEvent(_chartControls.controls.move, 'mousedown', moverDown);
         addEvent(_chartControls.controls.left, 'mousedown', sizerLeftDown);
         addEvent(_chartControls.controls.right, 'mousedown', sizerRightDown);
+
+        var shadowsDown = function(event) {
+            preventDefault(event);
+            var leftPosition = getClientX(event) - this.getBoundingClientRect()['x'];
+            var absolutePosition = leftPosition / _canvasViewSizes.width;
+            var centerWidth = _chartState.width / 2;
+            if (absolutePosition < _chartState.end) {
+                absolutePosition = Math.max(absolutePosition, centerWidth);
+            } else {
+                absolutePosition = Math.min(absolutePosition, 1 - centerWidth);
+            }
+            _chartState.start = absolutePosition - centerWidth;
+            _chartState.end = absolutePosition + centerWidth;
+            setLeftPosPreview();
+            setRightPosPreview();
+            drawBaseChart();
+            moverDown(event);
+        };
+
+        addEvent(_shadowsPreview, 'mousedown', shadowsDown);
     };
 
 
