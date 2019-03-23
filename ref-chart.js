@@ -383,7 +383,7 @@ function Chart(_element) {
     var setLeftPosPreview = function() {
         var leftPosition = _chartState.start * _canvasViewSizes.width;
         _scaleControls.setAttribute('transform', 'translate(' + leftPosition + ', 0)');
-        _chartControls.shadows.left.setAttribute('width', leftPosition);
+        _chartControls.shadows.left.setAttribute('width', leftPosition || 1);
 
         _chartState.startFloatPoint = _chartState.start * _chartData.xAxis.data.length;
         _chartState.startPoint = Math.floor(_chartState.startFloatPoint);
@@ -392,7 +392,7 @@ function Chart(_element) {
 
     var setRightPosPreview = function() {
         var rightPosition = _chartState.end * _canvasViewSizes.width;
-        _chartControls.shadows.right.setAttribute('width', _canvasViewSizes.width - rightPosition);
+        _chartControls.shadows.right.setAttribute('width', (_canvasViewSizes.width - rightPosition) || 1);
         _chartControls.shadows.right.setAttribute('x', rightPosition);
 
         _chartState.endFloatPoint = _chartState.end * _chartData.xAxis.data.length;
@@ -645,6 +645,7 @@ function Chart(_element) {
             } else {
                 absolutePosition = Math.min(absolutePosition, 1 - centerWidth);
             }
+
             _chartState.start = absolutePosition - centerWidth;
             _chartState.end = absolutePosition + centerWidth;
             setLeftPosPreview();
