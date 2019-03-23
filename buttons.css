@@ -1,0 +1,182 @@
+.switch-chart-displaying {
+    display: inline-block;
+    vertical-align: middle;
+    cursor: pointer;
+    font-size: 10px;
+    margin-right: 1.68em;
+    position: relative;
+    margin-top: 4px;
+}
+.switch-chart-displaying:last-child {
+    margin-right: 0;
+}
+.switch-chart-displaying input {
+    position: absolute;
+    bottom: 100%;
+    right: 100%;
+    margin: 0;
+    opacity: 0;
+}
+.switch-chart-displaying_btn {
+    display: block;
+    border: 0.12em solid;
+    line-height: 2.4em;
+    padding: 0.72em 1.56em 0.72em 0.72em ;
+    border-radius: 2.04em;
+    position: relative;
+}
+
+@keyframes shadowButton {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(6);
+    }
+}
+
+@keyframes shadowButton2 {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(6);
+    }
+}
+.btn-shadow {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 0;
+    overflow: hidden;
+    border-radius: 2.04em;
+}
+.btn-shadow:after {
+    position: relative;
+    z-index: 1;
+    left: 0.72em;
+    top: 0.72em;
+    width: 2.4em;
+    height: 2.4em;
+    border-radius: 50%;
+    content: '';
+    transform: scale(0.5);
+    transition: transform linear 0.1s;
+}
+.btn-shadow:after {
+    animation: shadowButton2 0.3s;
+    display: block;
+}
+.switch-chart-displaying input:checked + .switch-chart-displaying_btn .btn-shadow:after {
+    animation: shadowButton 0.3s;
+}
+.switch-chart-displaying_btn_ico {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 0.72em;
+    position: relative;
+    z-index: 2;
+    overflow: visible;
+}
+
+@keyframes circleSize {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+        border-width: 3.6em;
+    }
+    50% {
+        opacity: 1;
+        border-width: 3.6em;
+    }
+    80% {
+        opacity: 1;
+        transform: scale(1);
+        border-width: 1.2em;
+    }
+    99% {
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+        border-width: 0;
+    }
+}
+
+@keyframes circleSize2 {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+        border-width: 1.2em;
+    }
+    50% {
+        opacity: 1;
+        border-width: 3.6em;
+    }
+    80% {
+        opacity: 1;
+        transform: scale(1);
+        border-width: 1.2em;
+    }
+    99% {
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+        border-width: 0;
+    }
+}
+
+.switch-chart-displaying_btn_ico:after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
+    box-sizing: border-box;
+    border-style: solid;
+    transform: scale(0);
+    border-radius: 50%;
+    opacity: 0;
+}
+
+.switch-chart-displaying_btn_txt {
+    vertical-align: middle;
+    line-height: 1em;
+    font-size: 1.25em;
+    position: relative;
+}
+.check-i {
+    transition: transform 0.2s linear;
+    transform: matrix(4.5281622e-8,0,0,6.1128423e-8,11.999999,11.999999)
+}
+.check-c {
+    transition: r 0.15s linear;
+}
+.switch-chart-displaying input + .switch-chart-displaying_btn .switch-chart-displaying_btn_ico:after {
+    animation: circleSize 0.3s;
+}
+.switch-chart-displaying input:checked + .switch-chart-displaying_btn .switch-chart-displaying_btn_ico:after {
+    animation: circleSize2 0.3s;
+}
+.switch-chart-displaying input:checked + .switch-chart-displaying_btn .check-i {
+    transform: matrix(0.54337946,0,0,0.56238149,4.2568465,4.0796998);
+}
+.switch-chart-displaying input:checked ~ .switch-chart-displaying_btn .check-c {
+    r: 0;
+}

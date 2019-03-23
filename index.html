@@ -1,0 +1,57 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, maximum-scale=1, minimum-scale=1, user-scalable=no, initial-scale=1">
+    <script src="ref-chart.js"></script>
+    <script src="telegram-data.js"></script>
+    <script src="script.js"></script>
+    <link href="buttons.css" rel="stylesheet"/>
+    <link href="chart-themes.css" rel="stylesheet"/>
+
+    <!-- Chrome, Firefox OS and Opera -->
+    <meta name="theme-color" content="#eeeeee" class="browser-theme-color">
+    <!-- Windows Phone -->
+    <meta name="msapplication-navbutton-color" content="#eeeeee" class="browser-theme-color">
+    <!-- iOS Safari -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="#eeeeee" class="browser-theme-color">
+
+
+    <style>
+        body {
+            margin: 0;
+            padding-top: 20px;
+            width: 100%;
+            -moz-user-select: none;
+            -khtml-user-select: none;
+            user-select: none;
+        }
+        .chart-container {
+            max-width: 1260px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .chart-container:after {
+            content: '';
+            display: block;
+            clear: both;
+        }
+        @media screen and (max-width: 540px) {
+            body {
+                padding-top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<div class="chart-container">
+    <div id="charts-list"></div>
+</div>
+<div class="theme-switcher" id="theme-switcher">
+    Switch to
+    <span class="theme-switcher_night-theme">Day Mode</span>
+    <span class="theme-switcher_default-theme">Night Mode</span>
+</div>
+</body>
+</html>
