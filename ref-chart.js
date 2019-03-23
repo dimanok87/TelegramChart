@@ -58,15 +58,25 @@ function Chart(_element) {
         });
     };
 
-    var getClientX = function (event) {
+    var getClientX = function (event, identifier) {
         switch (event.type) {
             case 'mousedown':
             case 'mousemove':
                 return event.clientX;
                 break;
             case 'touchstart':
+                return event.touches[0].clientX;
+                break;
             case 'touchmove':
-                return event.targetTouches[0].clientX;
+                if (!isNaN(identifier)) {
+                    for (var t = 0; t < event.touches.length; t++) {
+                        if (identifier === event.touches[t]['identifier']) {
+                            return event.touches[t].clientX;
+                        }
+                    }
+                } else {
+                    return event.touches[0].clientX;
+                }
                 break;
         }
     };
@@ -362,6 +372,9 @@ function Chart(_element) {
         // Ось X
         _allElementsGroup.appendChild(_datesGroup);
         svgRectDateEl.setAttribute('width', _options.xAxisItemSize);
+        svgRectDateEl.setAttribute('height', _options.xAxisHeight);
+        svgRectDateEl.setAttribute('fill', 'transparent');
+        svgRectDateEl.setAttribute('transform', 'translate(-' + (_options.xAxisItemSize / 2) + ', -18)');
     };
 
 
@@ -485,7 +498,7 @@ function Chart(_element) {
         _chartGroup.setAttribute('transform', 'translate(0, ' + (previewOffset - _options.xAxisHeight) + ')');
         _gridsGroup.setAttribute('transform', 'translate(0, ' + (previewOffset - _options.xAxisHeight) + ')');
 
-        _datesGroup.setAttribute('transform', 'translate(0, ' + (previewOffset - _options.xAxisHeight + 16) + ')');
+        _datesGroup.setAttribute('transform', 'translate(0, ' + (previewOffset - _options.xAxisHeight + 18) + ')');
         _pointsGroup.setAttribute('transform', 'translate(0, ' + (previewOffset - _options.xAxisHeight) + ')');
         _options.xAxisCount = _canvasViewSizes.width / _options.xAxisItemSize;
         _options.baseChartHeight = _canvasViewSizes.height - _options.previewHeight - _options.xAxisHeight;
@@ -515,13 +528,25 @@ function Chart(_element) {
 
     var addControlsHandlers = function() {
 
-        var _startMovePosition,
+        var _startMovePosition = {},
             _previewDownPositions;
 
-        var iniCommonDown = function(event) {
+        var downIdentifiers = {
+            left: undefined,
+            right: undefined,
+            move: undefined
+        };
+
+        var removeAllHandlers = function() {
+            removeEvent(_chartControls.controls.move, 'mousedown', moverDown);
+            removeEvent(_chartControls.controls.left, 'mousedown', sizerLeftDown);
+            removeEvent(_chartControls.controls.right, 'mousedown', sizerRightDown);
+            removeEvent(_shadowsPreview, 'mousedown', shadowsDown);
+        };
+        var iniCommonDown = function(event, touchElement) {
             event.stopPropagation();
             preventDefault(event);
-            _startMovePosition = getClientX(event);
+            _startMovePosition[touchElement] = getClientX(event);
             _previewDownPositions = {
                 start: _chartState.start,
                 end: _chartState.end,
@@ -530,6 +555,14 @@ function Chart(_element) {
                 maxRight: 1 - _chartState.end,
                 minSize: _chartState.width - _options.minimumVisiblePoints / _chartData.xAxis.data.length
             };
+            removeAllHandlers();
+        };
+
+        var upControl = function() {
+            addEvent(_chartControls.controls.move, 'mousedown', moverDown);
+            addEvent(_chartControls.controls.left, 'mousedown', sizerLeftDown);
+            addEvent(_chartControls.controls.right, 'mousedown', sizerRightDown);
+            addEvent(_shadowsPreview, 'mousedown', shadowsDown);
         };
 
         var moverUp = function() {
@@ -540,10 +573,12 @@ function Chart(_element) {
                 _chartControls.controlsCircles.move.setAttribute('r', 0);
                 _chartControls.controlsCircles.move.style.opacity = 0;
             });
+            upControl();
+
         };
         var moverMove = function(event) {
             preventDefault(event);
-            var rangePercentsMove = (getClientX(event) - _startMovePosition) / _canvasViewSizes.width;
+            var rangePercentsMove = (getClientX(event, downIdentifiers.move) - _startMovePosition['move']) / _canvasViewSizes.width;
             rangePercentsMove = Math.max(Math.min(rangePercentsMove, _previewDownPositions.maxRight), _previewDownPositions.maxLeft);
 
             _chartState.start = _previewDownPositions.start + rangePercentsMove;
@@ -556,7 +591,10 @@ function Chart(_element) {
             return false;
         };
         var moverDown = function(event) {
-            iniCommonDown(event);
+            if (event.targetTouches && event.targetTouches.length) {
+                downIdentifiers.move = event.targetTouches[0].identifier;
+            }
+            iniCommonDown(event, 'move');
             addEvent(window, 'mousemove', moverMove);
             addEvent(window, 'mouseup', moverUp);
 
@@ -576,11 +614,12 @@ function Chart(_element) {
                 _chartControls.controlsCircles.left.setAttribute('r', 0);
                 _chartControls.controlsCircles.left.style.opacity = 0;
             });
+            upControl();
         };
         var leftMove = function(event) {
             preventDefault(event);
 
-            var rangePercentsMove = (getClientX(event) - _startMovePosition) / _canvasViewSizes.width;
+            var rangePercentsMove = (getClientX(event, downIdentifiers.left) - _startMovePosition['left']) / _canvasViewSizes.width;
             rangePercentsMove = Math.max(Math.min(rangePercentsMove, _previewDownPositions.minSize), _previewDownPositions.maxLeft);
             var start = _previewDownPositions.start + rangePercentsMove;
 
@@ -593,7 +632,10 @@ function Chart(_element) {
             return false;
         };
         var sizerLeftDown = function(event) {
-            iniCommonDown(event);
+            if (event.touches && event.touches.length) {
+                downIdentifiers.left = event.targetTouches[0].identifier;
+            }
+            iniCommonDown(event, 'left');
             addEvent(window, 'mousemove', leftMove);
             addEvent(window, 'mouseup', leftUp);
             _chartControls.controlsCircles.left.setAttribute('r', 0);
@@ -612,10 +654,11 @@ function Chart(_element) {
                 _chartControls.controlsCircles.right.setAttribute('r', 0);
                 _chartControls.controlsCircles.right.style.opacity = 0;
             });
+            upControl();
         };
         var rightMove = function(event) {
             preventDefault(event);
-            var rangePercentsMove = (getClientX(event) - _startMovePosition) / _canvasViewSizes.width;
+            var rangePercentsMove = (getClientX(event, downIdentifiers.right) - _startMovePosition['right']) / _canvasViewSizes.width;
             rangePercentsMove = Math.max(Math.min(rangePercentsMove, _previewDownPositions.maxRight), -_previewDownPositions.minSize);
 
             var end = _previewDownPositions.end + rangePercentsMove;
@@ -627,7 +670,10 @@ function Chart(_element) {
             return false;
         };
         var sizerRightDown = function(event) {
-            iniCommonDown(event);
+            if (event.touches && event.touches.length) {
+                downIdentifiers.right = event.targetTouches[0].identifier;
+            }
+            iniCommonDown(event, 'right');
             addEvent(window, 'mousemove', rightMove);
             addEvent(window, 'mouseup', rightUp);
 
@@ -639,12 +685,18 @@ function Chart(_element) {
             return false;
         };
 
-        addEvent(_chartControls.controls.move, 'mousedown', moverDown);
-        addEvent(_chartControls.controls.left, 'mousedown', sizerLeftDown);
-        addEvent(_chartControls.controls.right, 'mousedown', sizerRightDown);
 
+        var movieAutoAnimation, iniDown;
+        var shadowsUp = function() {
+            iniDown = false;
+            removeEvent(window, 'mouseup', shadowsUp);
+            upControl();
+        };
         var shadowsDown = function(event) {
+            iniDown = true;
             preventDefault(event);
+            removeAllHandlers();
+            addEvent(window, 'mouseup', shadowsUp);
             var leftPosition = getClientX(event) - this.getBoundingClientRect()['x'];
             var absolutePosition = leftPosition / _canvasViewSizes.width;
             var centerWidth = _chartState.width / 2;
@@ -653,16 +705,34 @@ function Chart(_element) {
             } else {
                 absolutePosition = Math.min(absolutePosition, 1 - centerWidth);
             }
+            var animationRange = absolutePosition - (_chartState.start + centerWidth);
+            var animationStep = animationRange / ANIMATION_FPS;
 
-            _chartState.start = absolutePosition - centerWidth;
-            _chartState.end = absolutePosition + centerWidth;
-            setLeftPosPreview();
-            setRightPosPreview();
-            drawBaseChart();
-            moverDown(event);
+            var startEnd = absolutePosition - centerWidth;
+            // _chartState.end = absolutePosition + centerWidth;
+
+
+            // var animationStep = startFinish - absolutePosition;
+
+            movieAutoAnimation = setInterval(function () {
+                _chartState.start+= animationStep;
+                _chartState.start = animationRange > 0 ?
+                    Math.min(_chartState.start, startEnd) :
+                    Math.max(_chartState.start, startEnd);
+                _chartState.end = _chartState.start + _chartState.width;
+                if (_chartState.start === startEnd) {
+                    clearTimeout(movieAutoAnimation);
+                    if (iniDown) {
+                        moverDown(event);
+                    }
+                }
+                setLeftPosPreview();
+                setRightPosPreview();
+                drawBaseChart();
+            });
         };
+        upControl();
 
-        addEvent(_shadowsPreview, 'mousedown', shadowsDown);
     };
 
 
@@ -687,37 +757,40 @@ function Chart(_element) {
         _chartState.selectedPointIndex = false;
     };
 
-    var setTooltipPosition = function(xPosition, index) {
-        var center = (_chartState.endPoint - _chartState.startPoint);
-        var position = index - center / 2;
+    var setTooltipPosition = function(index) {
+
+        var xPosition = index * _chartState.onePointWidth - _chartState.linesLeftOffset;
+        var floatIndexPosition = xPosition / _chartState.onePointWidth;
+        var center = _chartState.endFloatPoint - _chartState.startFloatPoint;
+        var position = floatIndexPosition - center / 2;
         var oneStepSize = pointsInfoTooltip.offsetWidth / center;
+
         pointsInfoTooltip.style.transform = 'translate(' + (-pointsInfoTooltip.offsetWidth / 2 + xPosition - oneStepSize * position)  + 'px, 0)';
     };
 
+
+    var selectDataPoint = function(x) {
+        var xPosition = x * _chartState.onePointWidth - _chartState.linesLeftOffset;
+        _pointsGroup.style.opacity = 1;
+        _chartState.selectedPointIndex = _chartState.startPoint + x;
+        pointsInfoTooltip.style.display = 'block';
+        setTimeout(function() {
+            pointsInfoTooltip.style.opacity = 1;
+        });
+        _pointLine.setAttribute('x1', xPosition);
+        _pointLine.setAttribute('x2', xPosition);
+        _pointLine.setAttribute('y1', 0);
+        _pointLine.setAttribute('y2', -_options.baseChartHeight);
+        setTooltipPosition(x);
+        setSelectedDatePoints(_chartData.xAxis.data[x + _chartState.startPoint]);
+        _chartData.yAxis.forEach(function(chartDataParams) {
+            chartDataParams.valueNode.valueNode.innerText = formatNumber(chartDataParams.visibleData[x]);
+            chartDataParams.circleChart.setAttribute('cx', xPosition);
+            chartDataParams.circleChart.setAttribute('cy', -chartDataParams.visibleData[x] *  _chartState.currentGridK);
+        });
+    };
+
     var iniBaseChartMove = function() {
-        var toIndex = function(x) {
-            var xPosition = x * _chartState.onePointWidth - _chartState.linesLeftOffset;
-            _pointsGroup.style.opacity = 1;
-            _chartState.selectedPointIndex = _chartState.startPoint + x;
-
-            pointsInfoTooltip.style.display = 'block';
-            setTimeout(function() {
-                pointsInfoTooltip.style.opacity = 1;
-            });
-            _pointLine.setAttribute('x1', xPosition);
-            _pointLine.setAttribute('x2', xPosition);
-            _pointLine.setAttribute('y1', 0);
-            _pointLine.setAttribute('y2', -_options.baseChartHeight);
-            setTooltipPosition(xPosition, x);
-            setSelectedDatePoints(_chartData.xAxis.data[x + _chartState.startPoint]);
-            _chartData.yAxis.forEach(function(chartDataParams) {
-                chartDataParams.valueNode.valueNode.innerText = formatNumber(chartDataParams.visibleData[x]);
-                chartDataParams.circleChart.setAttribute('cx', xPosition);
-                chartDataParams.circleChart.setAttribute('cy', -chartDataParams.visibleData[x] *  _chartState.currentGridK);
-            });
-        };
-
-
         var activeArea;
         addEvent(_svgCanvas, 'mousemove', function(event) {
             var offsetPositions = this.getBoundingClientRect();
@@ -731,7 +804,7 @@ function Chart(_element) {
                     showPointValues();
                 }
                 activeArea = true;
-                toIndex(Math.round((clientX + _chartState.linesLeftOffset) / _chartState.onePointWidth));
+                selectDataPoint(Math.round((clientX + _chartState.linesLeftOffset) / _chartState.onePointWidth));
             } else {
                 activeArea = false;
             }
@@ -831,7 +904,7 @@ function Chart(_element) {
                     previewAnimateInterval = false;
                     _chartState.animatedPreview = false;
                 }
-            }, _options.JSduration / ANIMATION_FPS);
+            }, _options.JSduration / ANIMATION_FPS / 2);
         }
     };
 
@@ -857,8 +930,8 @@ function Chart(_element) {
         var dateGroup = dateGroupEl.cloneNode(true);
         var svgRectDate = svgRectDateEl.cloneNode(false);
         var svgDate = svgDateEl.cloneNode(false);
-        dateGroup.appendChild(svgRectDate);
         dateGroup.appendChild(svgDate);
+        dateGroup.appendChild(svgRectDate);
         svgDate.textContent = point.label;
         if (!index) {
             svgDate.setAttribute('text-anchor', 'left');
@@ -866,6 +939,9 @@ function Chart(_element) {
             svgDate.setAttribute('transform', 'translate(' + (-_chartState.stepXAxis) + ', 0)');
             svgDate.setAttribute('text-anchor', 'end');
         }
+        addEvent(dateGroup, 'mousedown', function() {
+            selectDataPoint(index - _chartState.startPoint);
+        });
         _datesGroup.appendChild(dateGroup);
         return dateGroup;
     };
@@ -1025,7 +1101,7 @@ function Chart(_element) {
 
         if (_chartState.selectedPointIndex) {
             var selectedXVal = (_chartState.selectedPointIndex - _chartState.startPoint) * _chartState.onePointWidth - _chartState.linesLeftOffset;
-            setTooltipPosition(selectedXVal, _chartState.selectedPointIndex - _chartState.startPoint);
+            setTooltipPosition(_chartState.selectedPointIndex - _chartState.startPoint);
             _pointLine.setAttribute('x2', selectedXVal);
             _pointLine.setAttribute('x1', selectedXVal);
         }
@@ -1086,7 +1162,7 @@ function Chart(_element) {
                 animationInterval = false;
             }
             drawBaseLines();
-        }, _options.JSduration / ANIMATION_FPS);
+        }, _options.JSduration / ANIMATION_FPS / 2);
     };
 
     var _chartData = {
@@ -1173,7 +1249,7 @@ function Chart(_element) {
             chart.valueNode.baseNode.style.width = maxSizeInfo +'px';
         });
 
-        infoPointsTooltip.style.maxWidth = (maxSizeInfo + 1) * 2 + 'px';
+        infoPointsTooltip.style.width = (maxSizeInfo + 1) * 2 + 'px';
         infoPointsTooltip.style.minWidth = '100px';
         pointsInfoTooltip.style.display = 'none';
         drawBaseChart();
@@ -1228,6 +1304,10 @@ function Chart(_element) {
         setLeftPosPreview();
         setRightPosPreview();
         setPreviewSizes();
+
+        _chartState.gridLines.forEach(function(line) {
+            line.svg.querySelector('line').setAttribute('x2', _canvasViewSizes.width);
+        });
 
         if (_chartState.visibleCharts.length) {
             drawPreviewChart(true);
