@@ -709,10 +709,6 @@ function Chart(_element) {
             var animationStep = animationRange / ANIMATION_FPS;
 
             var startEnd = absolutePosition - centerWidth;
-            // _chartState.end = absolutePosition + centerWidth;
-
-
-            // var animationStep = startFinish - absolutePosition;
 
             movieAutoAnimation = setInterval(function () {
                 _chartState.start+= animationStep;
@@ -904,7 +900,7 @@ function Chart(_element) {
                     previewAnimateInterval = false;
                     _chartState.animatedPreview = false;
                 }
-            }, _options.JSduration / ANIMATION_FPS / 2);
+            });
         }
     };
 
@@ -1095,6 +1091,7 @@ function Chart(_element) {
 
 
     var animationInterval;
+
     var drawBaseChart = function() {
         _chartState.linesLeftOffset = _chartState.startFloatPoint % 1 * _chartState.onePointWidth;
         redrawDates();
@@ -1152,6 +1149,7 @@ function Chart(_element) {
         }
         _chartState.prevGridK = kHeight;
         var step = kHeightRange / ANIMATION_FPS;
+
         animationInterval = setInterval(function() {
             var newKH = _chartState.currentGridK + step;
             _chartState.currentGridK = (kHeightRange < 0) ?
@@ -1162,7 +1160,7 @@ function Chart(_element) {
                 animationInterval = false;
             }
             drawBaseLines();
-        }, _options.JSduration / ANIMATION_FPS / 2);
+        });
     };
 
     var _chartData = {
@@ -1235,7 +1233,6 @@ function Chart(_element) {
         setLeftPosPreview();
         setRightPosPreview();
         setPreviewSizes();
-
         addControlsHandlers();
         iniBaseChartMove();
 
@@ -1306,7 +1303,8 @@ function Chart(_element) {
         setPreviewSizes();
 
         _chartState.gridLines.forEach(function(line) {
-            line.svg.querySelector('line').setAttribute('x2', _canvasViewSizes.width);
+            console.log(line);
+            line.svg.setAttribute('x2', _canvasViewSizes.width);
         });
 
         if (_chartState.visibleCharts.length) {
