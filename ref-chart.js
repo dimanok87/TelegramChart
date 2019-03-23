@@ -900,7 +900,7 @@ function Chart(_element) {
                     previewAnimateInterval = false;
                     _chartState.animatedPreview = false;
                 }
-            });
+            }, 10);
         }
     };
 
@@ -1160,7 +1160,7 @@ function Chart(_element) {
                 animationInterval = false;
             }
             drawBaseLines();
-        });
+        }, 10);
     };
 
     var _chartData = {
