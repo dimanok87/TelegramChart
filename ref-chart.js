@@ -157,6 +157,9 @@ function Chart(_element) {
         // Группа превью графиков
         _chartsPreview = svgElement('g'),
 
+        // Весь чарт для слвига
+        _chartsBaseElements = svgElement('g'),
+
         // Для позиционирования и управления сеткой
         _gridsGroup = svgElement('g'),
 
@@ -359,12 +362,14 @@ function Chart(_element) {
         _chartControls.controlsCircles.left.setAttribute('cx', _options.previewOutside.left / 2);
         _chartControls.controlsCircles.right.setAttribute('cx', _options.previewOutside.left / 2);
 
+        _allElementsGroup.appendChild(_chartsBaseElements);
+
         // График
-        _allElementsGroup.appendChild(_chartGroup);
+        _chartsBaseElements.appendChild(_chartGroup);
 
 
         // Точки значений
-        _allElementsGroup.appendChild(_pointsGroup);
+        _chartsBaseElements.appendChild(_pointsGroup);
         _pointsGroup.appendChild(_pointLine);
         _pointsGroup.style.transition = 'opacity ' + _options.CSSduration + ' linear';
         _pointsGroup.style.opacity = 0;
@@ -375,7 +380,7 @@ function Chart(_element) {
 
 
         // Ось X
-        _allElementsGroup.appendChild(_datesGroup);
+        _chartsBaseElements.appendChild(_datesGroup);
         svgRectDateEl.setAttribute('width', _options.xAxisItemSize);
         svgRectDateEl.setAttribute('height', _options.xAxisHeight);
         svgRectDateEl.setAttribute('fill', 'transparent');
@@ -758,7 +763,7 @@ function Chart(_element) {
 
 
     var selectDataPoint = function(x) {
-        var xPosition = x * _chartState.onePointWidth - _chartState.linesLeftOffset;
+        var xPosition = x * _chartState.onePointWidth;
         _pointsGroup.style.opacity = 1;
         _chartState.selectedPointIndex = _chartState.startPoint + x;
         pointsInfoTooltip.style.display = 'block';
@@ -792,7 +797,7 @@ function Chart(_element) {
                     showPointValues();
                 }
                 activeArea = true;
-                selectDataPoint(Math.round((clientX + _chartState.linesLeftOffset) / _chartState.onePointWidth));
+                selectDataPoint(Math.round(clientX / _chartState.onePointWidth));
             } else {
                 activeArea = false;
             }
@@ -948,8 +953,8 @@ function Chart(_element) {
     };
     var redrawDates = function() {
         _chartState.xAxisVisible = _chartData.xAxis.data.slice(_chartState.startPoint, _chartState.endPoint);
-        _chartState.xAxisStartPosition = (_chartState.startFloatPoint - (_chartState.startFloatPoint % _chartState.stepXAxis));
-        _chartState.xAxisleftOffset = _chartState.startFloatPoint / _chartState.stepXAxis % 1;
+        _chartState.xAxisStartPosition = (_chartState.startPoint - (_chartState.startPoint % _chartState.stepXAxis));
+        _chartState.xAxisleftOffset = _chartState.startPoint / _chartState.stepXAxis % 1;
 
         var kWidth = _chartState.xAxisInterval / _options.xAxisItemSize;
         var xAxisCount = _options.xAxisCount / kWidth + 1;
@@ -1063,15 +1068,14 @@ function Chart(_element) {
 
 
     var drawBaseLines = function() {
-        var xPosition = (_chartState.selectedPointIndex - _chartState.startPoint) * _chartState.onePointWidth - _chartState.linesLeftOffset;
         _chartData.yAxis.forEach(function(chartItem) {
             var polyLinePoints = [];
             if (_chartState.selectedPointIndex) {
                 chartItem.circleChart.setAttribute('cy', -chartItem.data[_chartState.selectedPointIndex] * _chartState.currentGridK);
-                chartItem.circleChart.setAttribute('cx', xPosition);
+                chartItem.circleChart.setAttribute('cx', _chartState.selectedXVal);
             }
             chartItem.visibleData.forEach(function(point, index) {
-                var xVal = index * _chartState.onePointWidth - _chartState.linesLeftOffset;
+                var xVal = index * _chartState.onePointWidth;
                 polyLinePoints.push(
                     xVal + ',' + (-point * _chartState.currentGridK)
                 );
@@ -1086,28 +1090,37 @@ function Chart(_element) {
 
     var drawBaseChart = function() {
         _chartState.linesLeftOffset = _chartState.startFloatPoint % 1 * _chartState.onePointWidth;
+        _chartsBaseElements.setAttribute('transform', 'translate(' + (-_chartState.linesLeftOffset) + ', 0)');
         redrawDates();
 
+        // Выключаем анимацию, если есть
+        animationInterval ? clearInterval(animationInterval) : false;
+        animationInterval = false;
+
         if (_chartState.selectedPointIndex) {
-            var selectedXVal = (_chartState.selectedPointIndex - _chartState.startPoint) * _chartState.onePointWidth - _chartState.linesLeftOffset;
-            setTooltipPosition(_chartState.selectedPointIndex - _chartState.startPoint);
-            _pointLine.setAttribute('x2', selectedXVal);
-            _pointLine.setAttribute('x1', selectedXVal);
+            var visibleIndex = _chartState.selectedPointIndex - _chartState.startPoint;
+            _chartState.selectedXVal = visibleIndex * _chartState.onePointWidth;
+            setTooltipPosition(visibleIndex);
+            _pointLine.setAttribute('x2', _chartState.selectedXVal);
+            _pointLine.setAttribute('x1', _chartState.selectedXVal);
         }
 
         if (!_chartState.visibleCharts.length) {
             return;
         }
         var allVisibleData = [];
-        var visibleCharts = _chartData.yAxis.filter(function(chart) {
-            chart.visibleData = chart.data.slice(_chartState.startPoint, _chartState.endPoint);
-            return !chart.hidden;
+
+        _chartData.yAxis.filter(function(chart) {
+            if (!chart.hidden) {
+                chart.visibleData = chart.data.slice(_chartState.startPoint, _chartState.endPoint);
+                allVisibleData = allVisibleData.concat(chart.visibleData);
+                return true;
+            } else {
+                return false;
+            }
         });
-        visibleCharts.forEach(function(oneYItem) {
-            allVisibleData = allVisibleData.concat(oneYItem.visibleData);
-        });
+
         _chartState.maxVisible = Math.max.apply(null, allVisibleData);
-        _chartState.minVisible = Math.min.apply(null, allVisibleData);
 
         var maxValue = _chartState.maxVisible + _chartState.maxMinValues.min * 0.75;
 
@@ -1119,29 +1132,19 @@ function Chart(_element) {
         var kHeight = _options.baseChartHeight / absMaxValue;
 
         if (!_chartState.currentGridK) {
-            _chartState.prevGridK = kHeight;
-            _chartState.currentGridK = kHeight;
+            _chartState.prevGridK =
+                _chartState.currentGridK =
+                    kHeight;
             drawBaseLines();
             return;
         }
 
-        if (_chartState.prevGridK != kHeight) {
-            animationInterval ? clearInterval(animationInterval) : false;
-        } else {
-            !animationInterval ? drawBaseLines() : false;
-            return;
-        }
-
-
         var kHeightRange = kHeight - _chartState.currentGridK;
 
-        if (!kHeightRange) {
-            !animationInterval ? drawBaseLines() : false;
-            return;
-        }
         _chartState.prevGridK = kHeight;
         var step = kHeightRange / ANIMATION_FPS;
-
+        _chartState.currentGridK+= step;
+        drawBaseLines();
         animationInterval = setInterval(function() {
             var newKH = _chartState.currentGridK + step;
             _chartState.currentGridK = (kHeightRange < 0) ?
