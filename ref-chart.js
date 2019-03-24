@@ -791,7 +791,7 @@ function Chart(_element) {
                     showPointValues();
                 }
                 activeArea = true;
-                selectDataPoint(Math.round(clientX / _chartState.onePointWidth));
+                selectDataPoint(Math.round((clientX + _chartState.linesLeftOffset) / _chartState.onePointWidth));
             } else {
                 activeArea = false;
             }
