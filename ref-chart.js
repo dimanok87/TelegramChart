@@ -403,7 +403,8 @@ function Chart(_element) {
         _chartState.onePointWidth = _canvasViewSizes.width / (_chartState.endFloatPoint - _chartState.startFloatPoint - 1);
 
 
-        _chartControls.controlsButtons.move.setAttribute('width', previewSize - _options.previewOutside.left * 2);
+        _chartControls.controlsButtons.move.setAttribute('width', previewSize - _options.previewOutside.left * 4);
+        _chartControls.controlsButtons.move.setAttribute('x', _options.previewOutside.left);
         _chartControls.controls.right.setAttribute('transform', 'translate(' + (previewSize - _options.previewOutside.left) + ', 0)');
         _chartControls.controlsCircles.move.setAttribute('cx', previewSize / 2  - _options.previewOutside.left);
 
@@ -458,13 +459,6 @@ function Chart(_element) {
 
         _svgCanvas.setAttribute('width', svgSizes.width);
         _svgCanvas.setAttribute('height', svgSizes.height);
-
-        _svgCanvas.style['-moz-user-select'] =  'none';
-        _svgCanvas.style['-ms-user-select'] =  'none';
-        _svgCanvas.style['-khtml-user-select'] =  'none';
-        _svgCanvas.style['-webkit-user-select'] =  'none';
-        _svgCanvas.style['-webkit-touch-callout'] =  'none';
-
 
         _allElementsGroup.setAttribute('transform', 'translate(' + _options.padding.left + ', ' + _options.padding.top + ')');
 
@@ -819,7 +813,7 @@ function Chart(_element) {
                     (chartDataIndex * onePointWidth) + ',' +
                     (_options.previewHeight - ((chartDataPoint  - currMinValue) * currkHeight + _options.previewPadding)));
             });
-            chartItem.polyline.setAttribute('points', polyLinePoints.join(' '));
+            chartItem.polyline.setAttribute('d', 'M' + polyLinePoints.join('L'));
         });
     };
 
@@ -829,6 +823,7 @@ function Chart(_element) {
             max: null,
             min: null
         };
+
         _chartState.visibleCharts = _chartData.yAxis.filter(function(chart) {
             return !chart.hidden;
         });
@@ -1179,7 +1174,7 @@ function Chart(_element) {
                     };
                     break;
                 case 'line':
-                    var polyLinePreviewChart = svgElement('polyline');
+                    var polyLinePreviewChart = svgElement('path');
 
                     polyLinePreviewChart.setAttribute('fill-opacity', '0');
                     polyLinePreviewChart.setAttribute('stroke', data.colors[columnName]);
