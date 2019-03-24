@@ -14,7 +14,7 @@ function Chart(_element) {
 
     var SVG_NS = "http://www.w3.org/2000/svg";
     var CLIP_PATH_ID = 'chartGroup';
-    var ANIMATION_FPS = 25;
+    var ANIMATION_FPS = 22;
 
 
     var formatNumber = function(n) {
@@ -136,6 +136,11 @@ function Chart(_element) {
     _animateControlCircle.setAttribute('cy', _options.previewHeight / 2);
     _animateControlCircle.setAttribute('r', _options.previewHeight / 2);
 
+    var _controlsRect =  svgElement('circle');
+    _controlsRect.setAttribute('cy', _options.previewHeight / 2);
+    _controlsRect.setAttribute('r', _options.previewHeight / 2);
+    _controlsRect.setAttribute('cx', _options.previewOutside.left / 2);
+
     var
         // Для установки размеров холста
         _svgCanvas = svgElement('svg'),
@@ -198,8 +203,8 @@ function Chart(_element) {
                 move: _animateControlCircle.cloneNode(false)
             },
             controlsButtons: {
-                left: svgElement('rect'),
-                right: svgElement('rect'),
+                left: _controlsRect.cloneNode(false),
+                right: _controlsRect.cloneNode(false),
                 move: svgElement('rect')
             }
         };
@@ -483,14 +488,7 @@ function Chart(_element) {
         _chartControls.shadows.right.setAttribute('height', _options.previewHeight);
 
         _chartControls.controls.left.setAttribute('transform', 'translate(0, 0)');
-        _chartControls.controlsButtons.left.setAttribute('transform', 'translate(' + ( -(invisibleButtonSize - _options.previewOutside.left) / 2) + ', 0)');
-        _chartControls.controlsButtons.left.setAttribute('width', invisibleButtonSize);
-        _chartControls.controlsButtons.left.setAttribute('height', _options.previewHeight);
-
         _chartControls.controls.right.setAttribute('transform', 'translate(0, 0)');
-        _chartControls.controlsButtons.right.setAttribute('transform', 'translate(' + ( -(invisibleButtonSize - _options.previewOutside.left) / 2) + ', 0)');
-        _chartControls.controlsButtons.right.setAttribute('width', invisibleButtonSize);
-        _chartControls.controlsButtons.right.setAttribute('height', _options.previewHeight);
 
         _chartControls.controls.move.setAttribute('transform', 'translate(' + _options.previewOutside.left + ', 0)');
         _chartControls.controlsButtons.move.setAttribute('height', _options.previewHeight);
