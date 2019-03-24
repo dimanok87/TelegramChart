@@ -539,7 +539,6 @@ function Chart(_element) {
             removeEvent(_chartControls.controls.move, 'mousedown', moverDown);
             removeEvent(_chartControls.controls.left, 'mousedown', sizerLeftDown);
             removeEvent(_chartControls.controls.right, 'mousedown', sizerRightDown);
-            removeEvent(_shadowsPreview, 'mousedown', shadowsDown);
         };
         var iniCommonDown = function(event, touchElement) {
             event.stopPropagation();
@@ -560,7 +559,6 @@ function Chart(_element) {
             addEvent(_chartControls.controls.move, 'mousedown', moverDown);
             addEvent(_chartControls.controls.left, 'mousedown', sizerLeftDown);
             addEvent(_chartControls.controls.right, 'mousedown', sizerRightDown);
-            addEvent(_shadowsPreview, 'mousedown', shadowsDown);
         };
 
         var moverUp = function() {
@@ -684,18 +682,14 @@ function Chart(_element) {
         };
 
 
-        var movieAutoAnimation, iniDown;
-        var shadowsUp = function() {
-            iniDown = false;
-            removeEvent(window, 'mouseup', shadowsUp);
-            upControl();
-        };
+        var movieAutoAnimation;
+
         var shadowsDown = function(event) {
-            iniDown = true;
+            if (movieAutoAnimation) return;
             preventDefault(event);
             removeAllHandlers();
-            addEvent(window, 'mouseup', shadowsUp);
-            var leftPosition = getClientX(event) - this.getBoundingClientRect()['x'];
+
+            var leftPosition = event.clientX - this.getBoundingClientRect()['x'];
             var absolutePosition = leftPosition / _canvasViewSizes.width;
             var centerWidth = _chartState.width / 2;
             if (absolutePosition < _chartState.end) {
@@ -703,7 +697,7 @@ function Chart(_element) {
             } else {
                 absolutePosition = Math.min(absolutePosition, 1 - centerWidth);
             }
-            var animationRange = absolutePosition - (_chartState.start + centerWidth);
+            var animationRange = absolutePosition - _chartState.start - centerWidth;
             var animationStep = animationRange / ANIMATION_FPS;
 
             var startEnd = absolutePosition - centerWidth;
@@ -715,10 +709,9 @@ function Chart(_element) {
                     Math.max(_chartState.start, startEnd);
                 _chartState.end = _chartState.start + _chartState.width;
                 if (_chartState.start === startEnd) {
-                    clearTimeout(movieAutoAnimation);
-                    if (iniDown) {
-                        moverDown(event);
-                    }
+                    clearInterval(movieAutoAnimation);
+                    movieAutoAnimation = false;
+                    upControl();
                 }
                 setLeftPosPreview();
                 setRightPosPreview();
@@ -726,6 +719,7 @@ function Chart(_element) {
             });
         };
         upControl();
+        polyFillAddEvent(_shadowsPreview, 'click', shadowsDown);
 
     };
 
