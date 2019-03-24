@@ -40,7 +40,7 @@
 
 @media screen and (max-width: 340px) {
     .chart-buttons-container {
-        margin: 0 -20px;
+        margin: 0 -14px;
     }
     .chart-buttons-container:after {
         content: '';
