@@ -17,8 +17,44 @@ var getXmlHttp = function() {
     return xmlhttp;
 };
 
+var getCookie = function(name) {
+    var matches = document.cookie.match(new RegExp(
+        "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+    ));
+    return matches ? decodeURIComponent(matches[1]) : undefined;
+};
+var setCookie = function(name, value, options) {
+    options = options || {};
+
+    var expires = options.expires;
+
+    if (typeof expires == "number" && expires) {
+        var d = new Date();
+        d.setTime(d.getTime() + expires * 1000);
+        expires = options.expires = d;
+    }
+    if (expires && expires.toUTCString) {
+        options.expires = expires.toUTCString();
+    }
+
+    value = encodeURIComponent(value);
+
+    var updatedCookie = name + "=" + value;
+
+    for (var propName in options) {
+        updatedCookie += "; " + propName;
+        var propValue = options[propName];
+        if (propValue !== true) {
+            updatedCookie += "=" + propValue;
+        }
+    }
+    document.cookie = updatedCookie;
+};
+
 var initChart = function() {
     var xhr = getXmlHttp();
+
+    var theme = getCookie('theme');
 
     var body = document.getElementsByTagName('body')[0];
     var metaColorsTags = document.getElementsByClassName('browser-theme-color');
@@ -30,19 +66,33 @@ var initChart = function() {
 
     var selectedTheme = 'default';
 
-    var switchTheme = function () {
-        switch (selectedTheme) {
-            case 'default':
+    var setTheme = function(theme) {
+        theme = theme || 'default';
+        switch (theme) {
+            case 'night':
                 selectedTheme = 'night';
                 body.className = 'dark-theme';
                 break;
-            case 'night':
+            case 'default':
                 selectedTheme = 'default';
                 body.className = 'default-theme';
+                break;
         }
-
         for (var k = 0; k < metaColorsTags.length; k++) {
             metaColorsTags[k].setAttribute('content', themeColors[selectedTheme]);
+        }
+
+        setCookie('theme', theme, {expires: 86400});
+    };
+    setTheme(theme);
+    var switchTheme = function () {
+        switch (selectedTheme) {
+            case 'default':
+                setTheme('night');
+                break;
+            case 'night':
+                setTheme('default');
+                break;
         }
     };
 
