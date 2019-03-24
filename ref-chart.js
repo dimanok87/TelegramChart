@@ -714,7 +714,7 @@ function Chart(_element) {
                 }
                 setLeftPosPreview();
                 setRightPosPreview();
-                drawBaseChart(movieAutoAnimation);
+                drawBaseChart();
             });
         };
         upControl();
@@ -1083,7 +1083,7 @@ function Chart(_element) {
 
     var animationInterval;
 
-    var drawBaseChart = function(fastDraw) {
+    var drawBaseChart = function() {
         _chartState.linesLeftOffset = _chartState.startFloatPoint % 1 * _chartState.onePointWidth;
         _chartsBaseElements.setAttribute('transform', 'translate(' + (-_chartState.linesLeftOffset) + ', 0)');
         redrawDates();
@@ -1114,11 +1114,6 @@ function Chart(_element) {
                 return false;
             }
         });
-
-        if (fastDraw) {
-            drawBaseLines();
-            return;
-        }
 
         _chartState.maxVisible = Math.max.apply(null, allVisibleData);
 
