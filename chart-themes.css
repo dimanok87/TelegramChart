@@ -27,7 +27,7 @@
     margin: 0 14px;
     overflow: hidden;
 }
-@media screen and (max-width: 540px) {
+@media screen and (max-width: 740px) {
     body {
         padding-top: 0;
     }
@@ -35,6 +35,38 @@
         float: none;
         width: auto;
         margin: 0 0 10px;
+    }
+}
+
+@media screen and (max-width: 340px) {
+    .chart-buttons-container {
+        margin: 0 -20px;
+    }
+    .chart-buttons-container:after {
+        content: '';
+        display: block;
+        clear: both;
+    }
+    .switch-chart-displaying {
+        float: left;
+        width: 50%;
+        box-sizing: border-box;
+        margin-right: 0;
+        padding: 0 20px;
+    }
+    .switch-chart-displaying_btn {
+        text-align: center;
+    }
+    .switch-chart-displaying_btn:after {
+        content: '';
+        display: block;
+        clear: both;
+    }
+    .switch-chart-displaying_btn_ico {
+        float: left;
+    }
+    .switch-chart-displaying_btn_txt {
+        line-height: inherit;
     }
 }
 

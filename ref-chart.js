@@ -1302,7 +1302,7 @@ function Chart(_element) {
 
         _chartState.gridLines.forEach(function(line) {
             console.log(line);
-            line.svg.setAttribute('x2', _canvasViewSizes.width);
+            line.svg.querySelector('line').setAttribute('x2', _canvasViewSizes.width);
         });
 
         if (_chartState.visibleCharts.length) {
