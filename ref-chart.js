@@ -1301,7 +1301,6 @@ function Chart(_element) {
         setPreviewSizes();
 
         _chartState.gridLines.forEach(function(line) {
-            console.log(line);
             line.svg.querySelector('line').setAttribute('x2', _canvasViewSizes.width);
         });
 
