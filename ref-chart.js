@@ -892,7 +892,7 @@ function Chart(_element) {
                     previewAnimateInterval = false;
                     _chartState.animatedPreview = false;
                 }
-            }, 10);
+            }, 10 / _chartData.yAxis.length);
         }
     };
 
@@ -1152,7 +1152,7 @@ function Chart(_element) {
                 animationInterval = false;
             }
             drawBaseLines();
-        }, 10);
+        }, 10 / _chartData.yAxis.length);
     };
 
     var _chartData = {
