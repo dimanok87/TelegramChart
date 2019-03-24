@@ -347,9 +347,9 @@ function Chart(_element) {
 
         _previewGroup.appendChild(_invisibleControlsPreview);
 
-        _invisibleControlsPreview.appendChild(_chartControls.controls.move);
         _invisibleControlsPreview.appendChild(_chartControls.controls.left);
         _invisibleControlsPreview.appendChild(_chartControls.controls.right);
+        _invisibleControlsPreview.appendChild(_chartControls.controls.move);
 
         _chartControls.controls.left.appendChild(_chartControls.controlsCircles.left);
         _chartControls.controls.left.appendChild(_chartControls.controlsButtons.left);
